@@ -4,6 +4,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from utils import evaluate
 
+from methods import pseudo_quantize_model_weights
+
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--method", type=str, required=True, help="\'mixed\',\'awq\',\'naive_zeropoint\'")
@@ -20,10 +22,10 @@ if __name__ == "__main__":
     # TODO: log into hf here so other can use the model?
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name, dtype=torch.float16)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=torch.float16).to(args.device)
 
     print('before quantization (full precision):')
-    evaluate(model)
+    print(f'acc: {evaluate(model, tokenizer)}')
 
     if args.method == 'mixed':
         raise NotImplementedError('Implement me!')
@@ -31,14 +33,16 @@ if __name__ == "__main__":
     elif args.method == 'awq':
         raise NotImplementedError('Implement me!')
     
-    elif args.method == 'naive_zeropoint':
-        raise NotImplementedError('Implement me!')
+    elif args.method == 'naive_zeropoint': # for debugging
+        # (this is only weights, not activations)
+        args.a_bits = None
+        pseudo_quantize_model_weights(model, w_bit=args.w_bits, q_group_size=256)
     
     else:
         raise ValueError("Not a supported method, must be \'awq\', \'mixed\', or \'naive_zeropoint\'")
     
     print(f'after quantization (a{args.a_bits}w{args.w_bits}):')
-    evaluate(model)
+    print(f'acc: {evaluate(model, tokenizer)}')
     # dont just do ppl, also to task performance with lm_eval_harness?
 
 
