@@ -81,3 +81,34 @@ model, w_bit, a_bit, q_group_size, input_feat, salient_weight_p
                 return quantize_activations(module.outlier_indices, input[0])
             
             m.register_forward_pre_hook(forward_hook)
+
+@torch.no_grad()
+def pseudo_quantize_awq_naive(
+    model, w_bit, a_bit, q_group_size, input_feat, salient_weight_p, scaling_factor
+):
+    for n, m in model.named_modules():
+        if isinstance(m, nn.Linear):
+            importance = sum(input_feat[n]).float()
+            outlier_indices = torch.topk(importance, int(len(importance)*0.01*salient_weight_p)).indices
+            assert outlier_indices.dim() == 1
+            m.outlier_indices = outlier_indices.clone()
+            m.scaling_factor = scaling_factor
+
+            # scale weights up
+            m.weight.data[:, outlier_indices] *= scaling_factor
+            m.weight.data = pseudo_quantize_tensor(m.weight.data, n_bit=w_bit, q_group_size=q_group_size)
+
+            def quantize_activations(outlier_indices, input, scaling_factor):
+                # scale activations down
+                if len(input.shape) == 3:
+                    input[:, :, outlier_indices] /= scaling_factor
+                elif len(input.shape) == 2:
+                    input[:, outlier_indices] /= scaling_factor
+                input = pseudo_quantize_tensor(input, n_bit=a_bit, q_group_size=q_group_size)
+                return input
+
+            def forward_hook(module, input):
+                return quantize_activations(module.outlier_indices, input[0], module.scaling_factor)
+            
+            m.register_forward_pre_hook(forward_hook)
+    

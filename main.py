@@ -8,16 +8,19 @@ from methods import *
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("--method", type=str, required=True, help="\'mixed\',\'awq\',\'naive_zeropoint\'")
+    argparser.add_argument("--method", type=str, required=True, help="\'mixed\',\'awq\',\'awq_naive\',\'naive_zeropoint\'")
     argparser.add_argument("--model_name", type=str, required=True)
-    argparser.add_argument("--a_bits", type=float, required=False, default=4, help="number of bits to use when quantizing activations.")
-    argparser.add_argument("--w_bits", type=float, required=False, default=4, help="number of bits to use when quantizing weights.")
+    argparser.add_argument("--a_bits", type=int, required=False, default=4, help="number of bits to use when quantizing activations.")
+    argparser.add_argument("--w_bits", type=int, required=False, default=4, help="number of bits to use when quantizing weights.")
     argparser.add_argument("--salient_weight_p", type=int, required=False, default=1, help="percentage of salient weights/activations to protect in mixed precision.")
     argparser.add_argument("--q_group_size", type=int, required=False, default=128, help="group size when doing quantization.")
+    argparser.add_argument("--scaling_factor", type=float, required=False, default=1, help="for naive awp")
     args = argparser.parse_args()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.device = device
+
+    print(args)
 
     # TODO: log into hf here so other can use the model?
 
@@ -30,9 +33,12 @@ if __name__ == "__main__":
     if args.method == 'mixed':
         pseudo_quantize_mixed_precision(model, w_bit=args.w_bits, a_bit=args.a_bits, q_group_size=args.q_group_size, input_feat=input_feat, salient_weight_p=args.salient_weight_p)
     
+    elif args.method == 'awq_naive':
+        pseudo_quantize_awq_naive(model, w_bit=args.w_bits, a_bit=args.a_bits, q_group_size=args.q_group_size, input_feat=input_feat, salient_weight_p=args.salient_weight_p, scaling_factor=args.scaling_factor)
+    
     elif args.method == 'awq':
         raise NotImplementedError('Implement me!')
-    
+
     elif args.method == 'naive_zeropoint': # for debugging
         # (this is only weights, not activations)
         args.a_bits = None
