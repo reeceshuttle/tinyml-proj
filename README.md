@@ -28,7 +28,8 @@ pip install -r requirements.txt
 
 ## Usage:
 
+mixed precision:
+
 ```
-python main.py --model_name=meta-llama/Llama-3.2-1B \
-               --method=awq
+python main.py --method=mixed --model=meta-llama/Llama-3.2-1B --a_bits=8 --w_bits=4 --salient_weight_p=2
 ```

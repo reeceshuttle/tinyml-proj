@@ -48,3 +48,36 @@ def pseudo_quantize_model_weights(
     for n, m in model.named_modules():
         if isinstance(m, nn.Linear):
             m.weight.data = pseudo_quantize_tensor(m.weight.data, n_bit=w_bit, q_group_size=q_group_size)
+
+
+@torch.no_grad()
+def pseudo_quantize_mixed_precision(
+model, w_bit, a_bit, q_group_size, input_feat, salient_weight_p
+):
+    for n, m in model.named_modules():
+        if isinstance(m, nn.Linear):
+            importance = sum(input_feat[n]).float()
+            outlier_indices = torch.topk(importance, int(len(importance)*0.01*salient_weight_p)).indices
+            assert outlier_indices.dim() == 1
+            m.outlier_indices = outlier_indices.clone()
+            outlier = m.weight.data[:, outlier_indices].clone()
+            m.weight.data = pseudo_quantize_tensor(m.weight.data, n_bit=w_bit, q_group_size=q_group_size)
+            m.weight.data[:, outlier_indices] = outlier
+
+            def quantize_activations(outlier_indices, input):
+                if len(input.shape) == 3:
+                    outlier = input[:, :, outlier_indices].clone()
+                elif len(input.shape) == 2:
+                    outlier = input[:, outlier_indices].clone()
+                input = pseudo_quantize_tensor(input, n_bit=a_bit, q_group_size=q_group_size)
+                if len(input.shape) == 3:
+                    input[:, :, outlier_indices] = outlier
+                elif len(input.shape) == 2:
+                    input[:, outlier_indices] = outlier
+                
+                return input
+
+            def forward_hook(module, input):
+                return quantize_activations(module.outlier_indices, input[0])
+            
+            m.register_forward_pre_hook(forward_hook)

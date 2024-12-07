@@ -2,6 +2,7 @@ torch
 transformers
 datasets
 tqdm
+zstandard
 
 # accelerate==0.21.0 
 # sentencepiece==0.1.99 
