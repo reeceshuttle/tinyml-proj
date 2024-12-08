@@ -22,10 +22,8 @@ if __name__ == "__main__":
 
     print(args)
 
-    # TODO: log into hf here so other can use the model?
-
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=torch.float16).to(args.device)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=torch.float32).to(args.device)
 
     print(f'full precision ppl: {evaluate(model, tokenizer)}')
 
@@ -37,7 +35,7 @@ if __name__ == "__main__":
         pseudo_quantize_awq_naive(model, w_bit=args.w_bits, a_bit=args.a_bits, q_group_size=args.q_group_size, input_feat=input_feat, salient_weight_p=args.salient_weight_p, scaling_factor=args.scaling_factor)
     
     elif args.method == 'awq':
-        raise NotImplementedError('Implement me!')
+        pseudo_quantize_awq(model, w_bit=args.w_bits, a_bit=args.a_bits, q_group_size=args.q_group_size, input_feat=input_feat)
 
     elif args.method == 'naive_zeropoint': # for debugging
         # (this is only weights, not activations)
