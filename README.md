@@ -4,7 +4,7 @@
 
 ## Setup:
 
-1. create and install environment:
+1. create and activate environment:
 
 venv:
 
@@ -28,8 +28,14 @@ pip install -r requirements.txt
 
 ## Usage:
 
-mixed precision:
+Mixed Precision:
 
 ```
-python main.py --method=mixed --model=meta-llama/Llama-3.2-1B --a_bits=8 --w_bits=4 --salient_weight_p=2
+python main.py --method=mixed --model=meta-llama/Meta-Llama-3-8B --a_bits=4 --w_bits=4 --q_group_size=128 --salient_weight_p=1
+```
+
+AWQ:
+
+```
+python main.py --method=awq --model=meta-llama/Meta-Llama-3-8B --a_bits=4 --w_bits=4 --q_group_size=128
 ```

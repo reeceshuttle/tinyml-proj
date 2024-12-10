@@ -3,9 +3,3 @@ transformers
 datasets
 tqdm
 zstandard
-
-# accelerate==0.21.0 
-# sentencepiece==0.1.99 
-# tokenizers==0.13.3 
- 
-# zstandard
