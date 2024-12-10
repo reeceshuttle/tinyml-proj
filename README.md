@@ -28,6 +28,24 @@ pip install -r requirements.txt
 
 ## Usage:
 
+Entry is via `main.py`. Pass in any transformers model via the `--model` command line flag. Specify the method (`awq` or `mixed`) via the `--method` flag.
+
+All flags:
+
+`--model`: transformers model name.
+
+`--method`: quantization method. Either `awq` or `mixed`.
+
+`--a_bits`: The number of bits to use to represent the activations.
+
+`--w_bits`: The number of bits to use to represent the weights.
+
+`--q_group_size`: The quantizaton group size to use.
+
+`--salient_weight_p`: For Mixed Precision. The number of salient channels to preserve in full precision.
+
+Examples:
+
 Mixed Precision:
 
 ```
